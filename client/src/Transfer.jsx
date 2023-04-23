@@ -1,9 +1,11 @@
 import { useState } from "react";
 import server from "./server";
+import { signMessage } from "../sign";
 
 function Transfer({ address, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
+  const [privatekey, setPrivatekey] = useState("");
 
   const setValue = (setter) => (evt) => setter(evt.target.value);
 
@@ -11,16 +13,17 @@ function Transfer({ address, setBalance }) {
     evt.preventDefault();
 
     try {
+      const tobeSent = {
+        data: { address, recipient, amount: parseInt(sendAmount) },
+      };
+      tobeSent.signature = signMessage(tobeSent.data, privatekey);
       const {
         data: { balance },
-      } = await server.post(`send`, {
-        sender: address,
-        amount: parseInt(sendAmount),
-        recipient,
-      });
+      } = await server.post(`send`, tobeSent);
       setBalance(balance);
     } catch (ex) {
-      alert(ex.response.data.message);
+      // alert(ex.response.data.message);
+      alert(ex);
     }
   }
 
@@ -43,6 +46,16 @@ function Transfer({ address, setBalance }) {
           placeholder="Type an address, for example: 0x2"
           value={recipient}
           onChange={setValue(setRecipient)}
+        ></input>
+      </label>
+
+      <label>
+        Private Key
+        <input
+          placeholder="Sign with your private key"
+          value={privatekey}
+          onChange={setValue(setPrivatekey)}
+          type="password"
         ></input>
       </label>
 
